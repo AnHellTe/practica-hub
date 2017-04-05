@@ -1,13 +1,24 @@
-FROM debian
-MAINTAINER José Domingo Muñoz "josedom24@gmail.com"
+#Imagen docker de prueba.
 
-RUN apt-get update && apt-get install -y apache2 && apt-get clean && rm -rf /var/lib/apt/lists/*
+#Origen: Ubuntu 14.04 LTS
+FROM ubuntu:14.04
 
-ENV APACHE_RUN_USER www-data
-ENV APACHE_RUN_GROUP www-data
-ENV APACHE_LOG_DIR /var/log/apache2
+#Creador:
+MAINTAINER Jesus Marin <jam@jam.net.ve>
 
-EXPOSE 80
-ADD ["index.html","/var/www/html/"]
+#Actualizar el repositorio Ubuntu, luego descarga e instala paquetes que
+#requieren actualizacion.
+RUN apt-get -qq update && apt-get -qqy upgrade
 
-ENTRYPOINT ["/usr/sbin/apache2ctl", "-D", "FOREGROUND"]
+#Instalar algunos paquetes bases, utiles para mi y algunas dependencias.
+RUN apt-get -qqy install wget git curl dnsutils tmux zsh openssh-server pwgen vim
+
+#Tomado de https://github.com/tutumcloud/tutum-ubuntu/blob/master/Dockerfile
+#Para configurar SSHD y crear una contrasena para usuario ROOT
+RUN mkdir -p /var/run/sshd && sed -i "s/UsePrivilegeSeparation.*/UsePrivilegeSeparation no/g" /etc/ssh/sshd_config && sed -i "s/UsePAM.*/UsePAM no/g" /etc/ssh/sshd_config && sed -i "s/PermitRootLogin.*/PermitRootLogin yes/g" /etc/ssh/sshd_config
+ADD set_root_pw.sh /set_root_pw.sh
+ADD run.sh /run.sh
+RUN chmod +x /*.sh
+
+EXPOSE 22
+CMD ["/run.sh"]
